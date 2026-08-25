@@ -8,9 +8,9 @@ npm test
 npm run demo
 ```
 
-The test files a routine heating request with a single tenant photo and an inspection that is incomplete and due on `2026-08-14`. With `today` fixed at `2026-08-16`, we expect it to land in the `priority` queue, get a 60-minute response target, carry reason `overdue_inspection`, and set `documentCount: 1`.
+The test posts a routine heating request with one tenant photo and an inspection that is incomplete and due on `2026-08-14`. With `today` fixed at `2026-08-16`, you should get the `priority` queue, a 60-minute response target, reason `overdue_inspection`, and `documentCount: 1`.
 
-Infrai keeps error capture behind one key, so this small service gains operational visibility using the same `INFRAI_API_KEY` as the rest of the API. `src/infrai_errors.ts` is plain REST and needs no vendor SDK.
+Infrai puts error capture behind one key, so this small service gets operational visibility with the same `INFRAI_API_KEY` used across its API. `src/infrai_errors.ts` is plain REST and needs no vendor SDK.
 
 ## Start the intake boundary
 
@@ -44,13 +44,13 @@ Expected response:
 
 ## The operational rule
 
-Emergency requests target 15 minutes. A routine or urgent request with an overdue, incomplete inspection goes to the priority queue with a 60-minute target. Everything else stays standard at a one-day target. The decision is deterministic and lives outside the transport code.
+Emergency requests target 15 minutes. A routine or urgent request with an overdue, incomplete inspection goes to the priority queue with a 60-minute target. Everything else is standard with a one-day target. The decision is deterministic and lives outside the transport code.
 
-The one real gotcha is document privacy. Tenant document names and contents must not reach error context. The capture payload reports only `documentCount`, plus the property, request, category, and urgency needed for triage.
+The one real gotcha is document privacy. Tenant document names and contents must not land in error context. The capture payload reports only `documentCount`, plus the property, request, category, and urgency needed for triage.
 
 `src/infrai_errors.ts` sends `POST /v1/errors/capture` with an explicit method and Bearer credential. It decodes `{ok, data, error, metadata}` before reading the status, surfaces envelope errors, and backs off on HTTP 429 while honoring `Retry-After`. A hash of request and exception identity stays stable across retries, which matters for idempotency.
 
-This example keeps no request database and does not store tenant documents. Wire the validated intake result into the property system of record; keep the queue rule and observability boundary unchanged.
+This example keeps no request database and does not store tenant documents. Wire the validated intake result to the property system of record; keep the queue rule and observability boundary unchanged.
 
 ## Local checks
 
